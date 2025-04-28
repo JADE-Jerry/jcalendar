@@ -14,7 +14,8 @@
 #include "font.h"
 #define ROTATION 0
 
-GxEPD2_DISPLAY_CLASS<GxEPD2_DRIVER_CLASS, GxEPD2_DRIVER_CLASS::HEIGHT> display(GxEPD2_DRIVER_CLASS(/*CS=D8*/ 5, /*DC=D3*/ 17, /*RST=D4*/ 16, /*BUSY=D2*/ 4));
+SPIClass hspi(HSPI);
+GxEPD2_DISPLAY_CLASS<GxEPD2_DRIVER_CLASS, GxEPD2_DRIVER_CLASS::HEIGHT> display(GxEPD2_DRIVER_CLASS(/*CS=D8*/ CS_PIN, /*DC=D3*/ DC_PIN, /*RST=D4*/ RES_PIN, /*BUSY=D2*/ BUSY_PIN));
 U8G2_FOR_ADAFRUIT_GFX u8g2Fonts;
 
 
@@ -874,6 +875,8 @@ int si_calendar_status() {
 void task_screen(void* param) {
     Serial.println("[Task] screen update begin...");
 
+    hspi.begin(SCLK_PIN, -1, MOSI_PIN, -1); // remap hspi for EPD (swap pins)
+    display.epd2.selectSPI(hspi, SPISettings(8000000, MSBFIRST, SPI_MODE0));
     display.init(115200);          // 串口使能 初始化完全刷新使能 复位时间 ret上拉使能
     display.setRotation(ROTATION); // 设置屏幕旋转1和3是横向  0和2是纵向
     u8g2Fonts.begin(display);

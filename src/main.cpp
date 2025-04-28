@@ -347,10 +347,10 @@ void go_sleep() {
 
     // 省电考虑，重置gpio，平均每针脚能省8ua。
     gpio_reset_pin(PIN_LED); // 减小deep-sleep电流
-    gpio_reset_pin(GPIO_NUM_5); // 减小deep-sleep电流
-    gpio_reset_pin(GPIO_NUM_17); // 减小deep-sleep电流
-    gpio_reset_pin(GPIO_NUM_16); // 减小deep-sleep电流
-    gpio_reset_pin(GPIO_NUM_4); // 减小deep-sleep电流
+    gpio_reset_pin(CS_PIN); // 减小deep-sleep电流
+    gpio_reset_pin(DC_PIN); // 减小deep-sleep电流
+    gpio_reset_pin(RES_PIN); // 减小deep-sleep电流
+    gpio_reset_pin(BUSY_PIN); // 减小deep-sleep电流
 
     delay(10);
     Serial.println("Deep sleep...");
