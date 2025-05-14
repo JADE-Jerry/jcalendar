@@ -21,11 +21,12 @@ void IRAM_ATTR checkTicks() {
 }
 
 WiFiManager wm;
-WiFiManagerParameter para_qweather_key("qweather_key", "和风天气Token", "", 32); //     和风天气key
+WiFiManagerParameter para_qweather_host("qweather_host", "和风天气Host", "", 64); //     和风天气key
+WiFiManagerParameter para_qweather_key("qweather_key", "和风天气API Key", "", 32); //     和风天气key
 // const char* test_html = "<br/><label for='test'>天气模式</label><br/><input type='radio' name='test' value='0' checked> 每日天气test </input><input type='radio' name='test' value='1'> 实时天气test</input>";
 // WiFiManagerParameter para_test(test_html);
 WiFiManagerParameter para_qweather_type("qweather_type", "天气类型（0:每日天气，1:实时天气）", "0", 2, "pattern='\\[0-1]{1}'"); //     城市code
-WiFiManagerParameter para_qweather_location("qweather_loc", "位置ID", "", 9, "pattern='\\d{9}'"); //     城市code
+WiFiManagerParameter para_qweather_location("qweather_loc", "位置ID", "", 64); //     城市code
 WiFiManagerParameter para_cd_day_label("cd_day_label", "倒数日（4字以内）", "", 10); //     倒数日
 WiFiManagerParameter para_cd_day_date("cd_day_date", "日期（yyyyMMdd）", "", 8, "pattern='\\d{8}'"); //     城市code
 WiFiManagerParameter para_tag_days("tag_days", "日期Tag（yyyyMMddx，详见README）", "", 30); //     日期Tag
@@ -187,6 +188,7 @@ void buttonClick(void* oneButton) {
 void saveParamsCallback() {
     Preferences pref;
     pref.begin(PREF_NAMESPACE);
+    pref.putString(PREF_QWEATHER_HOST, para_qweather_host.getValue());
     pref.putString(PREF_QWEATHER_KEY, para_qweather_key.getValue());
     pref.putString(PREF_QWEATHER_TYPE, strcmp(para_qweather_type.getValue(), "1") == 0 ? "1" : "0");
     pref.putString(PREF_QWEATHER_LOC, para_qweather_location.getValue());
@@ -222,6 +224,7 @@ void buttonDoubleClick(void* oneButton) {
     // 根据配置信息设置默认值
     Preferences pref;
     pref.begin(PREF_NAMESPACE);
+    String qHost = pref.getString(PREF_QWEATHER_HOST);
     String qToken = pref.getString(PREF_QWEATHER_KEY);
     String qType = pref.getString(PREF_QWEATHER_TYPE, "0");
     String qLoc = pref.getString(PREF_QWEATHER_LOC);
@@ -231,8 +234,9 @@ void buttonDoubleClick(void* oneButton) {
     String week1st = pref.getString(PREF_SI_WEEK_1ST, "0");
     pref.end();
 
+    para_qweather_host.setValue(qHost.c_str(), 64);
     para_qweather_key.setValue(qToken.c_str(), 32);
-    para_qweather_location.setValue(qLoc.c_str(), 9);
+    para_qweather_location.setValue(qLoc.c_str(), 64);
     para_qweather_type.setValue(qType.c_str(), 1);
     para_cd_day_label.setValue(cddLabel.c_str(), 16);
     para_cd_day_date.setValue(cddDate.c_str(), 8);
@@ -241,6 +245,7 @@ void buttonDoubleClick(void* oneButton) {
 
     wm.setTitle("J-Calendar");
     wm.addParameter(&para_si_week_1st);
+    wm.addParameter(&para_qweather_host);
     wm.addParameter(&para_qweather_key);
     wm.addParameter(&para_qweather_type);
     wm.addParameter(&para_qweather_location);

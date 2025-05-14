@@ -4,6 +4,7 @@
 
 TaskHandle_t WEATHER_HANDLER;
 
+String _qweather_host;
 String _qweather_key;
 String _qweather_loc;
 
@@ -45,9 +46,9 @@ void task_weather(void* param) {
     // 实时天气
     bool success;
     if (_weather_type == 0) {
-        success = api.getForecastDaily(_daily_forecast, _qweather_key.c_str(), _qweather_loc.c_str());
+        success = api.getForecastDaily(_daily_forecast, _qweather_host.c_str(), _qweather_key.c_str(), _qweather_loc.c_str());
     } else {
-        success = api.getWeatherNow(_weather_now, _qweather_key.c_str(), _qweather_loc.c_str());
+        success = api.getWeatherNow(_weather_now, _qweather_host.c_str(), _qweather_key.c_str(), _qweather_loc.c_str());
     }
     if (success) {
         _weather_status = 1;
@@ -74,6 +75,7 @@ void weather_exec(int status) {
     // Preference 获取配置信息。
     Preferences pref;
     pref.begin(PREF_NAMESPACE);
+    _qweather_host = pref.getString(PREF_QWEATHER_HOST, "api.qweather.com");
     _qweather_key = pref.getString(PREF_QWEATHER_KEY, "");
     _qweather_loc = pref.getString(PREF_QWEATHER_LOC, "");
     pref.end();

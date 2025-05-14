@@ -35,7 +35,8 @@ bool getHolidays(Holiday& result, int year, int month) {
     }
     http.end();
 
-    if (int status = doc["code"]) {
+    int status = doc["code"].as<int>();
+    if (status != 0) {
         Serial.println("Get holidays error.");
         return false;
     }

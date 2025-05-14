@@ -8,6 +8,7 @@
 // !!!preferences key限制15字符
 #define PREF_SI_CAL_DATE "SI_CAL_DATE" // 屏幕当前显示的日期
 #define PREF_SI_WEEK_1ST "SI_WEEK_1ST" // 每周第一天，0: 周日（默认），1:周一
+#define PREF_QWEATHER_HOST "QWEATHER_HOST" // QWEATHER HOST
 #define PREF_QWEATHER_KEY "QWEATHER_KEY" // QWEATHER KEY/TOKEN
 #define PREF_QWEATHER_TYPE "QWEATHER_TYPE" // 0: 每日天气，1: 实时天气
 #define PREF_QWEATHER_LOC "QWEATHER_LOC" // 地理位置
