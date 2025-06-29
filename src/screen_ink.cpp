@@ -196,14 +196,15 @@ void draw_cal_year(bool partial) {
     calLayout.lunarYearX = u8g2Fonts.getCursorX() + 15;
     calLayout.lunarDayX = u8g2Fonts.getCursorX() + 15;
 
-    // 星期几
+    // 第几周
     u8g2Fonts.setFont(FONT_TEXT);
     u8g2Fonts.setFontMode(1);
     u8g2Fonts.setFontDirection(0);
     u8g2Fonts.setForegroundColor(todayColor);
     u8g2Fonts.setCursor(calLayout.weekX, calLayout.weekY);
-    u8g2Fonts.print("星期" + week_str[tmInfo.tm_wday]);
-
+    char week_num[8];
+    strftime(week_num, sizeof(week_num), "%V", &tmInfo); // 国际标准（ISO 8601）‌：以周一作为每周起始日
+    u8g2Fonts.printf("第%s周", week_num);
     calLayout.cdDayX = u8g2Fonts.getCursorX(); // update cd day X;
 
     // 今日农历年份，e.g. 乙巳年 蛇
