@@ -247,7 +247,9 @@ void draw_cal_days(bool partial) {
         totalDays = 31;
     }
     if (monthNum == 2) {
-        if ((tmInfo.tm_year + 1900) == 0 && (tmInfo.tm_year + 1900) % 100 != 0) {
+        if ((tmInfo.tm_year + 1900) % 4 == 0 
+            && (tmInfo.tm_year + 1900) % 100 != 0 
+            || (tmInfo.tm_year + 1900) % 400 == 0){
             totalDays = 29; // 闰二月
         } else {
             totalDays = 28; // 二月
