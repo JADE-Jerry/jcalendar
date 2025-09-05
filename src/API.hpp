@@ -8,7 +8,6 @@
 
 #include <ArduinoUZlib.h> // 解压gzip
 
-
 struct Weather {
     String time;
     int8_t temp;
@@ -109,6 +108,7 @@ private:
                         size_t outLen = 0;
                         ArduinoUZlib::decompress((uint8_t*)s.c_str(), (uint32_t)s.length(), outBuf, outLen);
                         error = deserializeJson(doc, (char*)outBuf, outLen);
+                        free(outBuf);
                     } else {
                         error = deserializeJson(doc, s);
                     }
