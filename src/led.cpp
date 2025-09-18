@@ -1,6 +1,7 @@
 #include "led.h"
 
-#define PIN_LED GPIO_NUM_22
+#include <Arduino.h>
+#include "wiring.h"
 
 TaskHandle_t LED_HANDLER;
 int8_t BLINK_TYPE;

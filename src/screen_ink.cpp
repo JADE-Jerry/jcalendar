@@ -14,9 +14,9 @@
 #include "font.h"
 #define ROTATION 0
 
-GxEPD2_DISPLAY_CLASS<GxEPD2_DRIVER_CLASS, GxEPD2_DRIVER_CLASS::HEIGHT> display(GxEPD2_DRIVER_CLASS(/*CS=D8*/ 5, /*DC=D3*/ 17, /*RST=D4*/ 16, /*BUSY=D2*/ 4));
+#include "wiring.h"
+GxEPD2_DISPLAY_CLASS<GxEPD2_DRIVER_CLASS, GxEPD2_DRIVER_CLASS::HEIGHT> display(GxEPD2_DRIVER_CLASS(/*CS=D8*/ SPI_CS, /*DC=D3*/ SPI_DC, /*RST=D4*/ SPI_RST, /*BUSY=D2*/ SPI_BUSY));
 U8G2_FOR_ADAFRUIT_GFX u8g2Fonts;
-
 
 #define FONT_TEXT u8g2_font_wqy16_t_gb2312 // 224825bytes，最大字库（天气描述中“霾”，只有此字库中有）
 #define FONT_SUB u8g2_font_wqy12_t_gb2312 // 次要字体，u8g2最小字体
@@ -40,6 +40,10 @@ int jqAccDate[24]; // 节气积累日
 const int jrLength = 11;
 const int jrDate[] = { 101, 214, 308, 312, 501, 504, 601, 701, 801, 910, 1001, 1224, 1225 };
 const String jrText[] = { "元旦", "情人节", "妇女节", "植树节", "劳动节", "青年节", "儿童节", "建党节", "建军节", "教师节", "国庆节", "平安夜", "圣诞节" };
+
+int _si_type = 0;
+String _study_schedule;
+
 
 struct tm tmInfo = { 0 }; // 日历显示用的时间
 
@@ -98,9 +102,9 @@ void init_cal_layout_size() {
     calLayout.weekX = 10;
     calLayout.weekY = calLayout.topH - 5;
 
-    calLayout.lunarYearX = calLayout.topX + calLayout.topW;
+    calLayout.lunarYearX = calLayout.topX + calLayout.topW + 15;
     calLayout.lunarYearY = calLayout.yearY / 2;
-    calLayout.lunarDayX = calLayout.topX + calLayout.topW;
+    calLayout.lunarDayX = calLayout.topX + calLayout.topW + 15;
     calLayout.lunarDayY = calLayout.yearY;
 
     calLayout.cdDayX = 0;
@@ -129,7 +133,7 @@ void init_cal_layout_size() {
     calLayout.dayH = 44;
 }
 
-void draw_cal_layout() {
+void draw_cal_header() {
     uint16_t color;
 
     u8g2Fonts.setFont(FONT_TEXT);
@@ -139,19 +143,19 @@ void draw_cal_layout() {
     int16_t daysMagin = 4;
 
     for (int i = 0; i < 7; i++) {
-        if((i + _week_1st) % 7 == 0 || (i + _week_1st) % 7 == 6) {
+        if ((i + _week_1st) % 7 == 0 || (i + _week_1st) % 7 == 6) {
             color = GxEPD_RED;
         } else {
             color = GxEPD_BLACK;
         }
         // header background
-        if(i == 0) {
-            display.fillRect(0, calLayout.headerY, (display.width() - 7 * calLayout.dayW)/2, calLayout.headerH, color);
-        } else if(i == 6) {
-            display.fillRect((display.width() + 7 * calLayout.dayW)/2, calLayout.headerY, (display.width() - 7 * calLayout.dayW)/2, calLayout.headerH, color);
+        if (i == 0) {
+            display.fillRect(0, calLayout.headerY, (display.width() - 7 * calLayout.dayW) / 2, calLayout.headerH, color);
+        } else if (i == 6) {
+            display.fillRect((display.width() + 7 * calLayout.dayW) / 2, calLayout.headerY, (display.width() - 7 * calLayout.dayW) / 2, calLayout.headerH, color);
         }
-        display.fillRect((display.width() - 7 * calLayout.dayW)/2 + i * calLayout.dayW, calLayout.headerY, calLayout.dayW, calLayout.headerH, color);
-        
+        display.fillRect((display.width() - 7 * calLayout.dayW) / 2 + i * calLayout.dayW, calLayout.headerY, calLayout.dayW, calLayout.headerH, color);
+
         // header text
         u8g2Fonts.drawUTF8(calLayout.headerX + daysMagin + (calLayout.dayW - u8g2Fonts.getUTF8Width(week_str[i].c_str())) / 2 + i * calLayout.dayW, calLayout.headerY + calLayout.headerH - 3, week_str[(i + _week_1st) % 7].c_str());
     }
@@ -247,9 +251,9 @@ void draw_cal_days(bool partial) {
         totalDays = 31;
     }
     if (monthNum == 2) {
-        if ((tmInfo.tm_year + 1900) % 4 == 0 
-            && (tmInfo.tm_year + 1900) % 100 != 0 
-            || (tmInfo.tm_year + 1900) % 400 == 0){
+        if ((tmInfo.tm_year + 1900) % 4 == 0
+            && (tmInfo.tm_year + 1900) % 100 != 0
+            || (tmInfo.tm_year + 1900) % 400 == 0) {
             totalDays = 29; // 闰二月
         } else {
             totalDays = 28; // 二月
@@ -291,7 +295,7 @@ void draw_cal_days(bool partial) {
     }
     pref.end();
 
-    if(_holiday.year != tmInfo.tm_year + 1900 || _holiday.month != tmInfo.tm_mon + 1) {
+    if (_holiday.year != tmInfo.tm_year + 1900 || _holiday.month != tmInfo.tm_mon + 1) {
         _holiday = {};
     }
 
@@ -313,7 +317,7 @@ void draw_cal_days(bool partial) {
         } else {
             color = GxEPD_BLACK;
         }
-        
+
         if (tmInfo.tm_year + 1900 == _holiday.year && tmInfo.tm_mon + 1 == _holiday.month) {
             uint8_t holidayIndex = 0;
             for (; holidayIndex < _holiday.length; holidayIndex++) {
@@ -419,8 +423,8 @@ void draw_cal_days(bool partial) {
 
             // 今日农历年份，e.g. 乙巳年 蛇
             // 如果农历月份小于公历月份，那么说明是上一年
-            int tg = nl_tg(tmInfo.tm_year + 1900 - (lunarMon > (tmInfo.tm_mon + 1)? 1:0));
-            int dz = nl_dz(tmInfo.tm_year + 1900 - (lunarMon > (tmInfo.tm_mon + 1)? 1:0));;
+            int tg = nl_tg(tmInfo.tm_year + 1900 - (lunarMon > (tmInfo.tm_mon + 1) ? 1 : 0));
+            int dz = nl_dz(tmInfo.tm_year + 1900 - (lunarMon > (tmInfo.tm_mon + 1) ? 1 : 0));;
             todayLunarYear = String(nl_tg_text[tg]) + String(nl_dz_text[dz]) + "年 " + String(nl_sx_text[dz]);
 
             // 今日农历日期
@@ -798,6 +802,122 @@ void draw_err(bool partial) {
     }
 }
 
+void drawStudySchedule() {
+    int i = _study_schedule.substring(0, 3).toInt();
+    Serial.printf("%d\r\n", i);
+    int morningClassCount = i / 100;
+    int eveningClassCount = (i % 100) / 10;
+    int nightClassCount = i % 10;
+    int segmentCount = (morningClassCount > 0 ? 1 : 0) + (eveningClassCount > 0 ? 1 : 0) + (nightClassCount > 0 ? 1 : 0);
+    String daysClassStr[7];
+    int pos_begin = 4;
+    int daysCount = 0;
+    do {
+        int pos_end = _study_schedule.indexOf(";", pos_begin);
+        if (pos_end < 0) break;
+
+        String str = _study_schedule.substring(pos_begin, pos_end);
+        str.trim();
+        daysClassStr[daysCount++] = str;
+        // Serial.printf("%d : %d : %s\r\n", daysCount, pos_end, str.c_str());
+        pos_begin = pos_end + 1;
+    } while (true);
+
+    // 计算Cell尺寸
+    int cellHeight = (display.height() - calLayout.topH - calLayout.headerH - segmentCount * 2) / (morningClassCount + eveningClassCount + nightClassCount);
+    int cellWidth = display.width() / daysCount;
+    int marginLeft = (display.width() - cellWidth * daysCount) / 2;
+
+    // cell line
+    display.drawFastHLine(0, calLayout.topH, display.width(), GxEPD_RED);
+    display.drawFastHLine(0, calLayout.topH - 1, display.width(), GxEPD_RED);
+    display.drawFastHLine(0, calLayout.topH + calLayout.headerH - 1, display.width(), GxEPD_RED);
+    display.drawFastHLine(0, calLayout.topH + calLayout.headerH, display.width(), GxEPD_RED);
+    int segmentIndex = 0;
+    uint16_t max_y = calLayout.topH + calLayout.headerH; // 水平分割线
+    for (int x = 1; x <= morningClassCount; x++) {
+        max_y += cellHeight;
+        display.drawFastHLine(0, max_y, display.width(), GxEPD_BLACK);
+    }
+    if (eveningClassCount > 0) {
+        max_y += 2;
+        display.drawFastHLine(0, max_y, display.width(), GxEPD_BLACK);
+    }
+    for (int x = 1; x <= eveningClassCount; x++) {
+        max_y += cellHeight;
+        display.drawFastHLine(0, max_y, display.width(), GxEPD_BLACK);
+    }
+    if (nightClassCount > 0) {
+        max_y += 2;
+        display.drawFastHLine(0, max_y, display.width(), GxEPD_BLACK);
+    }
+    for (int x = 1; x <= nightClassCount; x++) {
+        max_y += cellHeight;
+        display.drawFastHLine(0, max_y, display.width(), GxEPD_BLACK);
+    }
+    for (int x = 1; x < daysCount; x++) { // 垂直分割线
+        display.drawFastVLine(cellWidth * x, calLayout.headerH + calLayout.topH, max_y - calLayout.headerH - calLayout.topH, GxEPD_BLACK);
+    }
+
+    for (int x = 0; x < daysCount; x++) {
+        // Serial.println(daysClassStr[x].c_str());
+        int pos_begin = 0;
+        int yStep = 0;
+        int segmentIndex = 0;
+
+
+        uint16_t fontColor = GxEPD_BLACK;
+        do {
+            int pos_end = daysClassStr[x].indexOf(",", pos_begin);
+            String ss = daysClassStr[x].substring(pos_begin, pos_end);
+            ss.trim();
+            // Serial.printf("%s\r\n", ss.c_str());
+            if (yStep == 0) {
+                if (week_str[tmInfo.tm_wday] == ss) {
+                    display.fillRect(cellWidth * x + marginLeft, calLayout.topH, cellWidth, calLayout.headerH, GxEPD_RED);
+                    fontColor = GxEPD_RED;
+                    u8g2Fonts.setBackgroundColor(GxEPD_RED);
+                    u8g2Fonts.setForegroundColor(GxEPD_WHITE);
+                } else {
+                    fontColor = GxEPD_BLACK;
+                    u8g2Fonts.setBackgroundColor(GxEPD_WHITE);
+                    u8g2Fonts.setForegroundColor(fontColor);
+                }
+                u8g2Fonts.setFont(FONT_TEXT);
+                u8g2Fonts.drawUTF8(cellWidth * x + marginLeft + (cellWidth - u8g2Fonts.getUTF8Width(ss.c_str())) / 2, calLayout.topH + calLayout.headerH - 4, ss.c_str());
+            } else if (yStep > 0) {
+                if (yStep == morningClassCount + 1 || yStep == (morningClassCount + eveningClassCount + 1)) {
+                    segmentIndex++;
+                }
+                u8g2Fonts.setBackgroundColor(GxEPD_WHITE);
+                u8g2Fonts.setForegroundColor(fontColor);
+                int fontHeight = 12;
+                if (cellHeight < 18) {
+                    u8g2Fonts.setFont(FONT_SUB);
+                    fontHeight = 12;
+                } else {
+                    u8g2Fonts.setFont(FONT_TEXT);
+                    fontHeight = 16;
+                }
+                u8g2Fonts.drawUTF8(cellWidth * x + marginLeft + (cellWidth - u8g2Fonts.getUTF8Width(ss.c_str())) / 2, calLayout.topH + calLayout.headerH + cellHeight * yStep - 1 - (cellHeight - 1 - fontHeight) / 2 + 2 * segmentIndex, ss.c_str());
+            }
+
+            if (pos_end < 0) break;
+            pos_begin = pos_end + 1;
+            yStep++;
+        } while (true);
+    }
+
+    // 显示当前周几, 农历年月不显示
+    todayLunarYear = "";
+    todayLunarDay = "";
+    uint16_t color = (tmInfo.tm_wday == 0 || tmInfo.tm_wday == 6) ? GxEPD_RED : GxEPD_BLACK;
+    u8g2Fonts.setBackgroundColor(GxEPD_WHITE);
+    u8g2Fonts.setForegroundColor(GxEPD_BLACK);
+    u8g2Fonts.setFont(FONT_TEXT);
+    u8g2Fonts.drawUTF8(calLayout.lunarDayX, calLayout.lunarDayY, ("星期" + week_str[tmInfo.tm_wday]).c_str());
+}
+
 ///////////// Calendar //////////////
 /**
  * 处理日历信息
@@ -812,6 +932,10 @@ void si_calendar() {
     _cd_day_date = pref.getString(PREF_CD_DAY_DATE);
     _tag_days_str = pref.getString(PREF_TAG_DAYS);
     _week_1st = pref.getString(PREF_SI_WEEK_1ST, "0").toInt();
+    _study_schedule = pref.getString(PREF_STUDY_SCHEDULE);
+    _si_type = pref.getInt(PREF_SI_TYPE);
+    if (_study_schedule.isEmpty()) _si_type = 0;
+
     pref.end();
 
     time_t now = 0;
@@ -839,8 +963,7 @@ void si_calendar() {
                 time_t set = mktime(&tmInfo);
                 timeval tv;
                 tv.tv_sec = set;
-                settimeofday(&tv, nullptr);
-                isSetOK = true;
+                isSetOK = (settimeofday(&tv, nullptr) == 0);
                 Serial.println("WARN: Set system time by api time.");
             } else {
                 Serial.println("ERR: Fail to format api time.");
@@ -884,20 +1007,25 @@ void task_screen(void* param) {
     init_cal_layout_size();
     display.setFullWindow();
     display.fillScreen(GxEPD_WHITE);
-    draw_cal_layout();
-    draw_cal_days(false);
-    draw_cal_year(false);
+    do {
+        if (_si_type == 1) {
+            drawStudySchedule();
+        } else {
+            draw_cal_days(false);
+            draw_cal_header();
+        }
 
-    // 倒计日
-    draw_cd_day(_cd_day_label, _cd_day_date);
+        draw_cal_year(false);
 
-    if (weather_status() == 1) {
-        draw_weather(false);
-    } else if (weather_status() == 2) {
-        draw_err(false);
-    }
+        // 倒计日
+        draw_cd_day(_cd_day_label, _cd_day_date);
 
-    display.display();
+        if (weather_status() == 1) {
+            draw_weather(false);
+        } else if (weather_status() == 2) {
+            draw_err(false);
+        }
+    } while (display.nextPage());
 
     int32_t _calendar_date = (tmInfo.tm_year + 1900) * 10000 + (tmInfo.tm_mon + 1) * 100 + tmInfo.tm_mday;
 

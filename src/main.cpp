@@ -3,7 +3,9 @@
 
 #include <WiFiManager.h>
 
-#include "OneButton.h"
+#include "esp_sleep.h"
+
+#include <wiring.h>
 
 #include "led.h"
 #include "_sntp.h"
@@ -13,7 +15,7 @@
 
 #include "version.h"
 
-#define PIN_BUTTON GPIO_NUM_14 // 注意：由于此按键负责唤醒，因此需要选择支持RTC唤醒的PIN脚。
+#include "OneButton.h"
 OneButton button(PIN_BUTTON, true);
 
 void IRAM_ATTR checkTicks() {
@@ -31,6 +33,7 @@ WiFiManagerParameter para_cd_day_label("cd_day_label", "倒数日（4字以内�
 WiFiManagerParameter para_cd_day_date("cd_day_date", "日期（yyyyMMdd）", "", 8, "pattern='\\d{8}'"); //     城市code
 WiFiManagerParameter para_tag_days("tag_days", "日期Tag（yyyyMMddx，详见README）", "", 30); //     日期Tag
 WiFiManagerParameter para_si_week_1st("si_week_1st", "每周起始（0:周日，1:周一）", "0", 2, "pattern='\\[0-1]{1}'"); //     每周第一天
+WiFiManagerParameter para_study_schedule("study_schedule", "课程表", "0", 4000, "pattern='\\[0-9]{3}[;]$'"); //     每周第一天
 
 void print_wakeup_reason() {
     esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
@@ -158,10 +161,10 @@ void loop() {
 
     // 未在配置状态，且屏幕刷新完成，进入休眠
     if (!wm.getConfigPortalActive() && si_screen_status() > 0) {
-        if(_wifi_flag) {
+        if (_wifi_flag) {
             go_sleep();
         }
-        if(!_wifi_flag && millis() - _wifi_failed_millis > 10 * 1000) { // 如果wifi连接不成功，等待10秒休眠
+        if (!_wifi_flag && millis() - _wifi_failed_millis > 10 * 1000) { // 如果wifi连接不成功，等待10秒休眠
             go_sleep();
         }
     }
@@ -181,6 +184,11 @@ void buttonClick(void* oneButton) {
         Serial.println("In config status.");
     } else {
         Serial.println("Refresh screen manually.");
+        Preferences pref;
+        pref.begin(PREF_NAMESPACE);
+        int _si_type = pref.getInt(PREF_SI_TYPE);
+        pref.putInt(PREF_SI_TYPE, _si_type == 0 ? 1 : 0);
+        pref.end();
         si_screen();
     }
 }
@@ -196,6 +204,7 @@ void saveParamsCallback() {
     pref.putString(PREF_CD_DAY_DATE, para_cd_day_date.getValue());
     pref.putString(PREF_TAG_DAYS, para_tag_days.getValue());
     pref.putString(PREF_SI_WEEK_1ST, strcmp(para_si_week_1st.getValue(), "1") == 0 ? "1" : "0");
+    pref.putString(PREF_STUDY_SCHEDULE, para_study_schedule.getValue());
     pref.end();
 
     Serial.println("Params saved.");
@@ -232,6 +241,7 @@ void buttonDoubleClick(void* oneButton) {
     String cddDate = pref.getString(PREF_CD_DAY_DATE);
     String tagDays = pref.getString(PREF_TAG_DAYS);
     String week1st = pref.getString(PREF_SI_WEEK_1ST, "0");
+    String studySchedule = pref.getString(PREF_STUDY_SCHEDULE);
     pref.end();
 
     para_qweather_host.setValue(qHost.c_str(), 64);
@@ -242,6 +252,7 @@ void buttonDoubleClick(void* oneButton) {
     para_cd_day_date.setValue(cddDate.c_str(), 8);
     para_tag_days.setValue(tagDays.c_str(), 30);
     para_si_week_1st.setValue(week1st.c_str(), 1);
+    para_study_schedule.setValue(studySchedule.c_str(), 4000);
 
     wm.setTitle("J-Calendar");
     wm.addParameter(&para_si_week_1st);
@@ -252,6 +263,7 @@ void buttonDoubleClick(void* oneButton) {
     wm.addParameter(&para_cd_day_label);
     wm.addParameter(&para_cd_day_date);
     wm.addParameter(&para_tag_days);
+    wm.addParameter(&para_study_schedule);
     // std::vector<const char *> menu = {"wifi","wifinoscan","info","param","custom","close","sep","erase","update","restart","exit"};
     std::vector<const char*> menu = { "wifi","param","update","sep","info","restart","exit" };
     wm.setMenu(menu); // custom menu, pass vector
@@ -338,7 +350,12 @@ void go_sleep() {
     }
 
     esp_sleep_enable_timer_wakeup(p * (uint64_t)uS_TO_S_FACTOR);
+#ifdef CONFIG_IDF_TARGET_ESP32   
     esp_sleep_enable_ext0_wakeup(PIN_BUTTON, 0);
+#elif CONFIG_IDF_TARGET_ESP32C3
+    esp_deep_sleep_enable_gpio_wakeup(PIN_BUTTON, ESP_GPIO_WAKEUP_GPIO_HIGH);
+    gpio_set_direction(PIN_BUTTON, GPIO_MODE_INPUT);
+#endif
 
     // 省电考虑，关闭RTC外设和存储器
     // esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF); // RTC IO, sensors and ULP, 注意：由于需要按键唤醒，所以不能关闭，否则会导致RTC_IO唤醒失败
@@ -347,10 +364,10 @@ void go_sleep() {
 
     // 省电考虑，重置gpio，平均每针脚能省8ua。
     gpio_reset_pin(PIN_LED); // 减小deep-sleep电流
-    gpio_reset_pin(GPIO_NUM_5); // 减小deep-sleep电流
-    gpio_reset_pin(GPIO_NUM_17); // 减小deep-sleep电流
-    gpio_reset_pin(GPIO_NUM_16); // 减小deep-sleep电流
-    gpio_reset_pin(GPIO_NUM_4); // 减小deep-sleep电流
+    gpio_reset_pin(SPI_CS); // 减小deep-sleep电流
+    gpio_reset_pin(SPI_DC); // 减小deep-sleep电流
+    gpio_reset_pin(SPI_RST); // 减小deep-sleep电流
+    gpio_reset_pin(SPI_BUSY); // 减小deep-sleep电流
 
     delay(10);
     Serial.println("Deep sleep...");
