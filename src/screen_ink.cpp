@@ -1,9 +1,13 @@
 #include "screen_ink.h"
 
+
 #include <weather.h>
 #include <API.hpp>
 #include "holiday.h"
 #include "nongli.h"
+
+#include "battery.h"
+int voltage;
 
 #include <_preference.h>
 
@@ -71,6 +75,11 @@ struct
     int16_t cdDayX;
     int16_t cdDayY;
 
+    int16_t statusX;
+    int16_t statusY;
+    int16_t statusW;
+    int16_t statusH;
+
     int16_t weatherX;
     int16_t weatherY;
     int16_t weatherW;
@@ -114,6 +123,11 @@ void init_cal_layout_size() {
     calLayout.tY = calLayout.topY;
     calLayout.tW = 60;
     calLayout.tH = calLayout.topH / 2;
+
+    calLayout.statusX = 300;
+    calLayout.statusY = 0;
+    calLayout.statusW = display.width() - calLayout.weatherX;
+    calLayout.statusH = 14;
 
     calLayout.weatherX = 300;
     calLayout.weatherY = calLayout.topY;
@@ -575,6 +589,7 @@ void draw_cd_day(String label, String date) {
     }
 }
 
+
 void draw_special_day() {
     String str = "Special Days!!!";
 
@@ -802,6 +817,38 @@ void draw_err(bool partial) {
     }
 }
 
+void draw_status(bool partial) {
+    if (partial) {
+        display.setPartialWindow(calLayout.statusX, calLayout.statusY, calLayout.statusW, calLayout.statusH);
+        display.firstPage();
+        display.fillScreen(GxEPD_WHITE);
+    }
+    u8g2Fonts.setFontMode(1);
+    u8g2Fonts.setFontDirection(0);
+    u8g2Fonts.setBackgroundColor(GxEPD_WHITE);
+    u8g2Fonts.setForegroundColor(GxEPD_BLACK);
+    u8g2Fonts.setFont(u8g2_font_siji_t_6x10);
+
+    // 电池icon
+    String iconStr = "";
+    if(voltage >= 4100) { // 满电
+        iconStr = "\ue24b";
+    } else if (voltage >= 3900) { // 多电
+        iconStr = "\ue249";
+    } else if (voltage >= 3700) { // 中电量
+        iconStr = "\ue247";
+    } else if (voltage >= 3500) { // 低电量
+        iconStr = "\ue245";
+    } else { // 空
+        iconStr = "\ue242";
+    }
+    u8g2Fonts.drawUTF8(400 - 12 - 4, 10, iconStr.c_str());
+
+    if (partial) {
+        display.nextPage();
+    }
+}
+
 void drawStudySchedule() {
     int i = _study_schedule.substring(0, 3).toInt();
     Serial.printf("%d\r\n", i);
@@ -1000,6 +1047,8 @@ int si_calendar_status() {
 void task_screen(void* param) {
     Serial.println("[Task] screen update begin...");
 
+    voltage = readBatteryVoltage();
+
     display.init(115200);          // 串口使能 初始化完全刷新使能 复位时间 ret上拉使能
     display.setRotation(ROTATION); // 设置屏幕旋转1和3是横向  0和2是纵向
     u8g2Fonts.begin(display);
@@ -1022,8 +1071,9 @@ void task_screen(void* param) {
 
         if (weather_status() == 1) {
             draw_weather(false);
-        } else if (weather_status() == 2) {
-            draw_err(false);
+        }
+        if (voltage > 1000) {
+            draw_status(false);
         }
     } while (display.nextPage());
 
@@ -1066,4 +1116,40 @@ void print_status() {
     Serial.printf("Weather: %d\n", weather_status());
     Serial.printf("Calendar: %d\n", si_calendar_status());
     Serial.printf("Screen: %d\n", si_screen_status());
+}
+
+
+
+void si_warning(const char* str) {
+    Serial.println("Screen warning...");
+    display.init(115200);          // 串口使能 初始化完全刷新使能 复位时间 ret上拉使能
+    display.setRotation(ROTATION); // 设置屏幕旋转1和3是横向  0和2是纵向
+    u8g2Fonts.begin(display);
+
+    display.setFullWindow();
+    display.fillScreen(GxEPD_WHITE);
+    do {
+        u8g2Fonts.setFontMode(1);
+        u8g2Fonts.setFontDirection(0);
+        u8g2Fonts.setBackgroundColor(GxEPD_WHITE);
+        u8g2Fonts.setForegroundColor(GxEPD_BLACK);
+
+        u8g2Fonts.setFont(u8g2_font_open_iconic_all_4x_t);
+        int space = 8;
+        int w = u8g2Fonts.getUTF8Width("\u0118") + space;
+        u8g2Fonts.setFont(FONT_TEXT);
+        w += u8g2Fonts.getUTF8Width(str);
+
+        u8g2Fonts.setForegroundColor(GxEPD_RED);
+        u8g2Fonts.setFont(u8g2_font_open_iconic_all_4x_t);
+        u8g2Fonts.setCursor((display.width() - w) / 2, (display.height() + 32) / 2);
+        u8g2Fonts.print("\u0118");
+
+        u8g2Fonts.setForegroundColor(GxEPD_BLACK);
+        u8g2Fonts.setCursor(u8g2Fonts.getCursorX() + space, u8g2Fonts.getCursorY() - 5);
+        u8g2Fonts.setFont(FONT_TEXT);
+        u8g2Fonts.print(str);
+    } while (display.nextPage());
+
+    display.powerOff();
 }

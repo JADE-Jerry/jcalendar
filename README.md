@@ -29,8 +29,11 @@ Bilibili连接：https://www.bilibili.com/video/BV1wHDhYoE3G/<br>
     * 其他
         * 按钮->(PIN_14, GND)
         * LED->22(板载)
+        * 电池ADC->32
 2. 三色墨水屏排线插入时注意针脚方向,屏幕排线和驱动板排线1号针脚均是悬空,注意对齐。
 3. 电池接口需要是ph2.0,且注意正负极(开发板上有标注),如果电池的正负极反了,可以用镊子调整电池插头。
+    1. 可选：电池电压检测电路，需要通过两个相同的大电阻（建议500K以上）串联，通过分压进行检测电池电压。如图
+    <img src="./assets/img/battery_adc.png" width="30%"><br>
 4. 烧录固件<br>
     使用ESP32的烧录工具flash_download_tool烧录固件. [Flash Download Tools](https://www.espressif.com/en/support/download/other-tools?keys=flash+download+tools)
     1. 选择烧录的文件和烧录地址（bootloader.bin与partitions.bin烧录过一次后，就不需要重复烧录了）
@@ -123,6 +126,8 @@ A: 2025年3月1日后注册的和风天气账户有API Host限制，请下载1.0
 A: 在系统运行状态下(状态灯常亮)，单击按键，稍等即可切换课程表的展示。
 
 ## Releases
+### 1.1.1
+* New Featue: 增加对电池的测量和显示。
 ### 1.1.0
 * New Feature: 课程表。
 * Refine: 对针脚统一配置。

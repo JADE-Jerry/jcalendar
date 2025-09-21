@@ -11,3 +11,5 @@ int si_screen_status();
 void si_screen();
 
 void print_status();
+
+void si_warning(const char* str);

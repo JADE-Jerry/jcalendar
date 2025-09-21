@@ -8,7 +8,7 @@ int8_t BLINK_TYPE;
 
 void led_init()
 {
-    pinMode(PIN_LED, OUTPUT);
+    pinMode(PIN_LED_R, OUTPUT);
 }
 
 void task_led(void *param)
@@ -18,42 +18,42 @@ void task_led(void *param)
         switch(BLINK_TYPE)
         {
             case 0:
-                digitalWrite(PIN_LED, HIGH); // Off
+                digitalWrite(PIN_LED_R, HIGH); // Off
                 vTaskDelay(pdMS_TO_TICKS(1000));
             break;
             case 1:
-                digitalWrite(PIN_LED, LOW); // On
+                digitalWrite(PIN_LED_R, LOW); // On
                 vTaskDelay(pdMS_TO_TICKS(1000));
             break;
             case 2:
-                digitalWrite(PIN_LED, LOW); // On
+                digitalWrite(PIN_LED_R, LOW); // On
                 vTaskDelay(pdMS_TO_TICKS(1000));
-                digitalWrite(PIN_LED, HIGH); // Off
+                digitalWrite(PIN_LED_R, HIGH); // Off
                 vTaskDelay(pdMS_TO_TICKS(1000));
             break;
             case 3:
-                digitalWrite(PIN_LED, LOW); // On
+                digitalWrite(PIN_LED_R, LOW); // On
                 vTaskDelay(pdMS_TO_TICKS(200));
-                digitalWrite(PIN_LED, HIGH); // Off
+                digitalWrite(PIN_LED_R, HIGH); // Off
                 vTaskDelay(pdMS_TO_TICKS(200));
             break;
             case 4:
                 vTaskDelay(pdMS_TO_TICKS(200));
-                digitalWrite(PIN_LED, LOW); // On
+                digitalWrite(PIN_LED_R, LOW); // On
                 vTaskDelay(pdMS_TO_TICKS(200));
-                digitalWrite(PIN_LED, HIGH); // Off
+                digitalWrite(PIN_LED_R, HIGH); // Off
                 vTaskDelay(pdMS_TO_TICKS(200));
-                digitalWrite(PIN_LED, LOW); // On
+                digitalWrite(PIN_LED_R, LOW); // On
                 vTaskDelay(pdMS_TO_TICKS(200));
-                digitalWrite(PIN_LED, HIGH); // Off
+                digitalWrite(PIN_LED_R, HIGH); // Off
                 vTaskDelay(pdMS_TO_TICKS(200));
-                digitalWrite(PIN_LED, LOW); // On
+                digitalWrite(PIN_LED_R, LOW); // On
                 vTaskDelay(pdMS_TO_TICKS(200));
-                digitalWrite(PIN_LED, HIGH); // Off
+                digitalWrite(PIN_LED_R, HIGH); // Off
                 vTaskDelay(pdMS_TO_TICKS(1000));
             break;
             default:
-                digitalWrite(PIN_LED, HIGH); // Off
+                digitalWrite(PIN_LED_R, HIGH); // Off
                 vTaskDelay(pdMS_TO_TICKS(1000));
         }
     }
