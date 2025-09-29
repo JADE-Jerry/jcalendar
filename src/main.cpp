@@ -44,8 +44,22 @@ void print_wakeup_reason() {
         Serial.println("Wakeup caused by external signal using RTC_IO");
         break;
     case ESP_SLEEP_WAKEUP_EXT1:
+    {
         Serial.println("Wakeup caused by external signal using RTC_CNTL");
+        uint64_t status = esp_sleep_get_ext1_wakeup_status();
+        if (status == 0) {
+            Serial.println(" *None of the configured pins woke us up");
+        } else {
+            Serial.print(" *Wakeup pin mask: ");
+            Serial.printf("0x%016llX\r\n", status);
+            for (int i = 0; i < 64; i++) {
+                if ((status >> i) & 0x1) {
+                    Serial.printf("  - GPIO%d\r\n", i);
+                }
+            }
+        }
         break;
+    }
     case ESP_SLEEP_WAKEUP_TIMER:
         Serial.println("Wakeup caused by timer");
         break;
@@ -75,7 +89,7 @@ void setup() {
     Serial.begin(115200);
     Serial.println(".");
     print_wakeup_reason();
-    Serial.println("\r\n\r\n\r\n");
+    Serial.println("\r\n\r\n");
     delay(10);
 
     button.setClickMs(300);
@@ -298,7 +312,6 @@ void buttonDoubleClick(void* oneButton) {
     _idle_millis = millis();
 }
 
-
 // 重置系统，并重启
 void buttonLongPressStop(void* oneButton) {
     Serial.println("Button long press.");
@@ -344,7 +357,6 @@ void go_sleep() {
         time_t set = mktime(&tmNew);
 
         p = (uint64_t)(set - time(NULL));
-        Serial.printf("Sleep time: %ld seconds\n", p);
     } else {
         if (tmNow.tm_hour % 2 == 0) { // 将时间推后两个小时，偶整点刷新。
             now += 7200;
@@ -364,11 +376,11 @@ void go_sleep() {
         time_t set = mktime(&tmNew);
 
         p = (uint64_t)(set - time(NULL));
-        Serial.printf("Sleep time: %ld seconds\n", p);
     }
+    Serial.printf("Sleep time: %ld seconds\n", p);
 
     esp_sleep_enable_timer_wakeup(p * (uint64_t)uS_TO_S_FACTOR);
-    esp_sleep_enable_ext0_wakeup(KEY_M, 0);
+    esp_sleep_enable_ext0_wakeup(KEY_M, LOW);
 
     // 省电考虑，关闭RTC外设和存储器
     // esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF); // RTC IO, sensors and ULP, 注意：由于需要按键唤醒，所以不能关闭，否则会导致RTC_IO唤醒失败
@@ -381,6 +393,7 @@ void go_sleep() {
     gpio_reset_pin(SPI_DC); // 减小deep-sleep电流
     gpio_reset_pin(SPI_RST); // 减小deep-sleep电流
     gpio_reset_pin(SPI_BUSY); // 减小deep-sleep电流
+    gpio_reset_pin(PIN_ADC); // 减小deep-sleep电流
 
     delay(10);
     Serial.println("Deep sleep...");

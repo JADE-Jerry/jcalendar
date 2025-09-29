@@ -1049,6 +1049,8 @@ void task_screen(void* param) {
 
     voltage = readBatteryVoltage();
 
+    delay(100);
+
     display.init(115200);          // 串口使能 初始化完全刷新使能 复位时间 ret上拉使能
     display.setRotation(ROTATION); // 设置屏幕旋转1和3是横向  0和2是纵向
     u8g2Fonts.begin(display);
