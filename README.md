@@ -126,12 +126,16 @@ A: 2025年3月1日后注册的和风天气账户有API Host限制，请下载1.0
 A: 在系统运行状态下(状态灯常亮)，单击按键，稍等即可切换课程表的展示。
 
 ## Releases
+### 1.1.3
+* Fix: some bugs.
+### 1.1.2
+* Refine: 功耗
 ### 1.1.1
 * New Featue: 增加对电池的测量和显示。
 ### 1.1.0
 * New Feature: 课程表。
 * Refine: 对针脚统一配置。
-* Fix: Some bugs.
+* Fix: some bugs.
 ### 1.0.27
 * Fix: 闰月错误。（bug from nongli lib）
 ### 1.0.26
