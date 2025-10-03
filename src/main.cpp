@@ -329,71 +329,62 @@ void buttonLongPressStop(void* oneButton) {
 #define TIMEOUT_TO_SLEEP  10 // seconds
 time_t blankTime = 0;
 void go_sleep() {
-    // 设置唤醒时间为下个偶数整点。
-    time_t now = time(NULL);
-    struct tm tmNow = { 0 };
-    // Serial.printf("Now: %ld -- %s\n", now, ctime(&now));
-    localtime_r(&now, &tmNow); // 时间戳转化为本地时间结构
-
     uint64_t p;
     // 根据配置情况来刷新，如果未配置qweather信息，则24小时刷新，否则每2小时刷新
     Preferences pref;
     pref.begin(PREF_NAMESPACE);
     String _qweather_key = pref.getString(PREF_QWEATHER_KEY, "");
     pref.end();
+
+    time_t now;
+    time(&now);
+    struct tm local;
+    localtime_r(&now, &local);
     if (_qweather_key.length() == 0 || weather_type() == 0) { // 没有配置天气或者使用按日天气，则第二天刷新。
-        Serial.println("Sleep to next day.");
-        now += 3600 * 24;
-        localtime_r(&now, &tmNow); // 将新时间转成tm
-        // Serial.printf("Set1: %ld -- %s\n", now, ctime(&now));
-
-        struct tm tmNew = { 0 };
-        tmNew.tm_year = tmNow.tm_year;
-        tmNew.tm_mon = tmNow.tm_mon;        // 月份从0开始
-        tmNew.tm_mday = tmNow.tm_mday;           // 日期
-        tmNew.tm_hour = 0;           // 小时
-        tmNew.tm_min = 0;            // 分钟
-        tmNew.tm_sec = 10;            // 秒, 防止离线时出现时间误差，所以，延后10s
-        time_t set = mktime(&tmNew);
-
-        p = (uint64_t)(set - time(NULL));
-    } else {
-        if (tmNow.tm_hour % 2 == 0) { // 将时间推后两个小时，偶整点刷新。
-            now += 7200;
-        } else {
-            now += 3600;
+        // Sleep to next day
+        int secondsToNextDay = (24 - local.tm_hour) * 3600 - local.tm_min * 60 - local.tm_sec;
+        if (secondsToNextDay <= 0) {
+            secondsToNextDay += 24 * 3600;
         }
-        localtime_r(&now, &tmNow); // 将新时间转成tm
-        // Serial.printf("Set1: %ld -- %s\n", now, ctime(&now));
-
-        struct tm tmNew = { 0 };
-        tmNew.tm_year = tmNow.tm_year;
-        tmNew.tm_mon = tmNow.tm_mon;        // 月份从0开始
-        tmNew.tm_mday = tmNow.tm_mday;           // 日期
-        tmNew.tm_hour = tmNow.tm_hour;           // 小时
-        tmNew.tm_min = 0;            // 分钟
-        tmNew.tm_sec = 10;            // 秒, 防止离线时出现时间误差，所以，延后10s
-        time_t set = mktime(&tmNew);
-
-        p = (uint64_t)(set - time(NULL));
+        Serial.printf("Seconds to next day: %d seconds.\n", secondsToNextDay);
+        p = (uint64_t)(secondsToNextDay);
+    } else {
+        // Sleep to next even hour.
+        int secondsToNextHour = (60 - local.tm_min) * 60 - local.tm_sec;
+        if (secondsToNextHour <= 0) {
+            secondsToNextHour += 3600;
+        }
+        if ((local.tm_hour % 2) == 0) { // 如果是奇数点，则多睡1小时
+            secondsToNextHour += 3600;
+        }
+        Serial.printf("Seconds to next even hour: %d seconds.\n", secondsToNextHour);
+        p = (uint64_t)(secondsToNextHour);
     }
-    Serial.printf("Sleep time: %ld seconds\n", p);
+    p += 10; // 额外增加10秒，避免过早唤醒
 
     esp_sleep_enable_timer_wakeup(p * (uint64_t)uS_TO_S_FACTOR);
     esp_sleep_enable_ext0_wakeup(KEY_M, LOW);
 
     // 省电考虑，关闭RTC外设和存储器
-    // esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF); // RTC IO, sensors and ULP, 注意：由于需要按键唤醒，所以不能关闭，否则会导致RTC_IO唤醒失败
+    // esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF); // RTC IO, sensors and ULP, 注意：由于需要按键唤醒，所以不能关闭，否则会导致RTC_IO唤醒(ext0)失败
     esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF); // 
     esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
+    esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_OFF);
 
+    gpio_deep_sleep_hold_dis(); // 解除所有引脚的保持状态
+    
     // 省电考虑，重置gpio，平均每针脚能省8ua。
     gpio_reset_pin(PIN_LED_R); // 减小deep-sleep电流
     gpio_reset_pin(SPI_CS); // 减小deep-sleep电流
     gpio_reset_pin(SPI_DC); // 减小deep-sleep电流
     gpio_reset_pin(SPI_RST); // 减小deep-sleep电流
     gpio_reset_pin(SPI_BUSY); // 减小deep-sleep电流
+    gpio_reset_pin(SPI_MOSI); // 减小deep-sleep电流
+    gpio_reset_pin(SPI_MISO); // 减小deep-sleep电流
+    gpio_reset_pin(SPI_SCK); // 减小deep-sleep电流
     gpio_reset_pin(PIN_ADC); // 减小deep-sleep电流
+    gpio_reset_pin(I2C_SDA); // 减小deep-sleep电流
+    gpio_reset_pin(I2C_SCL); // 减小deep-sleep电流
 
     delay(10);
     Serial.println("Deep sleep...");

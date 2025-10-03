@@ -18,7 +18,6 @@
 #define I2C_SDA GPIO_NUM_21
 #define I2C_SCL GPIO_NUM_22
 // Other PIN
-#define PIN_BUZZ -1
 #define KEY_M GPIO_NUM_14 // 注意：由于此按键负责唤醒，因此需要选择支持RTC唤醒的PIN脚。
 #define PIN_LED_R GPIO_NUM_22
 

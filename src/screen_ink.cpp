@@ -1057,6 +1057,7 @@ void task_screen(void* param) {
 
     init_cal_layout_size();
     display.setFullWindow();
+    display.firstPage();
     display.fillScreen(GxEPD_WHITE);
     do {
         if (_si_type == 1) {
@@ -1074,7 +1075,7 @@ void task_screen(void* param) {
         if (weather_status() == 1) {
             draw_weather(false);
         }
-        if (voltage > 1000) {
+        if (voltage > 1000 && voltage < 4300) {
             draw_status(false);
         }
     } while (display.nextPage());
@@ -1087,6 +1088,7 @@ void task_screen(void* param) {
     pref.end();
 
     display.powerOff(); // !!!important!!!, 关闭屏幕，否则会多0.5ma的空载电流（全屏刷新的话会自动关闭，局部刷新必须手动关闭）
+    display.hibernate();
     Serial.println("[Task] screen update end...");
 
     _screen_status = 1;
@@ -1154,4 +1156,5 @@ void si_warning(const char* str) {
     } while (display.nextPage());
 
     display.powerOff();
+    display.hibernate();
 }
