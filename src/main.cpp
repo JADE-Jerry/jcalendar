@@ -92,13 +92,6 @@ void setup() {
     Serial.println("\r\n\r\n");
     delay(10);
 
-    button.setClickMs(300);
-    button.setPressMs(3000); // 设置长按的时长
-    button.attachClick(buttonClick, &button);
-    button.attachDoubleClick(buttonDoubleClick, &button);
-    // button.attachMultiClick()
-    button.attachLongPressStop(buttonLongPressStop, &button);
-    attachInterrupt(digitalPinToInterrupt(KEY_M), checkTicks, CHANGE);
 
     Serial.printf("***********************\r\n");
     Serial.printf("      J-Calendar\r\n");
@@ -111,8 +104,8 @@ void setup() {
     delay(1000);
     int voltage = readBatteryVoltage();
     Serial.printf("Battery: %d mV\r\n", voltage);
-    if(voltage < 1000) {
-        Serial.println("[WARN]无电池。");
+    if(voltage < 2500) {
+        Serial.println("[INFO]电池损坏或无ADC电路。");
     } else if(voltage < 3000) {
         Serial.println("[WARN]电量低于3v，系统休眠。");
         go_sleep();
@@ -121,8 +114,18 @@ void setup() {
         Serial.println("[WARN]电量低于3.3v，警告并系统休眠。");
         si_warning("电量不足，请充电！");
         go_sleep();
+    } else if (voltage > 4400) {
+        Serial.println("[INFO]未接电池。");
     }
-    
+
+    button.setClickMs(300);
+    button.setPressMs(3000); // 设置长按的时长
+    button.attachClick(buttonClick, &button);
+    button.attachDoubleClick(buttonDoubleClick, &button);
+    // button.attachMultiClick()
+    button.attachLongPressStop(buttonLongPressStop, &button);
+    attachInterrupt(digitalPinToInterrupt(KEY_M), checkTicks, CHANGE);
+
     Serial.println("Wm begin...");
     led_fast();
     wm.setHostname("J-Calendar");
@@ -343,24 +346,19 @@ void go_sleep() {
     if (_qweather_key.length() == 0 || weather_type() == 0) { // 没有配置天气或者使用按日天气，则第二天刷新。
         // Sleep to next day
         int secondsToNextDay = (24 - local.tm_hour) * 3600 - local.tm_min * 60 - local.tm_sec;
-        if (secondsToNextDay <= 0) {
-            secondsToNextDay += 24 * 3600;
-        }
         Serial.printf("Seconds to next day: %d seconds.\n", secondsToNextDay);
         p = (uint64_t)(secondsToNextDay);
+        p = p < 0 ? 3600 * 24 : (p + 30); // 额外增加30秒，避免过早唤醒
     } else {
         // Sleep to next even hour.
         int secondsToNextHour = (60 - local.tm_min) * 60 - local.tm_sec;
-        if (secondsToNextHour <= 0) {
-            secondsToNextHour += 3600;
-        }
         if ((local.tm_hour % 2) == 0) { // 如果是奇数点，则多睡1小时
             secondsToNextHour += 3600;
         }
         Serial.printf("Seconds to next even hour: %d seconds.\n", secondsToNextHour);
         p = (uint64_t)(secondsToNextHour);
+        p = p < 0 ? 3600 : (p + 10); // 额外增加10秒，避免过早唤醒
     }
-    p += 10; // 额外增加10秒，避免过早唤醒
 
     esp_sleep_enable_timer_wakeup(p * (uint64_t)uS_TO_S_FACTOR);
     esp_sleep_enable_ext0_wakeup(KEY_M, LOW);
@@ -370,21 +368,22 @@ void go_sleep() {
     esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF); // 
     esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
     esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_OFF);
+    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC8M, ESP_PD_OPTION_OFF);
 
     gpio_deep_sleep_hold_dis(); // 解除所有引脚的保持状态
     
     // 省电考虑，重置gpio，平均每针脚能省8ua。
-    gpio_reset_pin(PIN_LED_R); // 减小deep-sleep电流
+    // gpio_reset_pin(PIN_LED_R); // 减小deep-sleep电流
     gpio_reset_pin(SPI_CS); // 减小deep-sleep电流
     gpio_reset_pin(SPI_DC); // 减小deep-sleep电流
     gpio_reset_pin(SPI_RST); // 减小deep-sleep电流
-    gpio_reset_pin(SPI_BUSY); // 减小deep-sleep电流
+    gpio_reset_pin(SPI_BUSY); // 减小deep-sleep电流`
     gpio_reset_pin(SPI_MOSI); // 减小deep-sleep电流
     gpio_reset_pin(SPI_MISO); // 减小deep-sleep电流
     gpio_reset_pin(SPI_SCK); // 减小deep-sleep电流
-    gpio_reset_pin(PIN_ADC); // 减小deep-sleep电流
-    gpio_reset_pin(I2C_SDA); // 减小deep-sleep电流
-    gpio_reset_pin(I2C_SCL); // 减小deep-sleep电流
+    // gpio_reset_pin(PIN_ADC); // 减小deep-sleep电流
+    // gpio_reset_pin(I2C_SDA); // 减小deep-sleep电流
+    // gpio_reset_pin(I2C_SCL); // 减小deep-sleep电流
 
     delay(10);
     Serial.println("Deep sleep...");

@@ -1087,7 +1087,7 @@ void task_screen(void* param) {
     pref.putInt(PREF_SI_CAL_DATE, _calendar_date);
     pref.end();
 
-    display.powerOff(); // !!!important!!!, 关闭屏幕，否则会多0.5ma的空载电流（全屏刷新的话会自动关闭，局部刷新必须手动关闭）
+    display.powerOff();
     display.hibernate();
     Serial.println("[Task] screen update end...");
 
@@ -1150,7 +1150,7 @@ void si_warning(const char* str) {
         u8g2Fonts.print("\u0118");
 
         u8g2Fonts.setForegroundColor(GxEPD_BLACK);
-        u8g2Fonts.setCursor(u8g2Fonts.getCursorX() + space, u8g2Fonts.getCursorY() - 5);
+        u8g2Fonts.setCursor(u8g2Fonts.getCursorX() + space, u8g2Fonts.getCursorY() - 8);
         u8g2Fonts.setFont(FONT_TEXT);
         u8g2Fonts.print(str);
     } while (display.nextPage());
