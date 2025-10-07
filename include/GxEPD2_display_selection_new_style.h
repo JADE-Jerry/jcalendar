@@ -31,6 +31,8 @@
         #define GxEPD2_DRIVER_CLASS GxEPD2_420c_Z21
     #elif (SI_DRIVER == 98)
         #define GxEPD2_DRIVER_CLASS GxEPD2_420c_GDEY042Z98
+    #elif (SI_DRIVER == 1680)
+        #define GxEPD2_DRIVER_CLASS GxEPD2_420c_1680
     #endif
 #endif
 

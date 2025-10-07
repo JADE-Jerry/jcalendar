@@ -23,7 +23,7 @@ rm -f ./dist/*
 pio run -t clean
 
 export PLATFORMIO_BUILD_FLAGS=-DJ_VERSION=\\\"${version}\\\"
-pio run -e z98 -e z21 -e z15
+pio run -e z98 -e z21 -e z15 -e 1680
 
 if [ $? -ne 0 ]; then
   echo "ERR: build err when firmware of Z98."
@@ -34,6 +34,7 @@ else
   cp $basedir/.pio/build/z98/firmware.bin $basedir/dist/jcalendar_${version}_z98.bin
   cp $basedir/.pio/build/z15/firmware.bin $basedir/dist/jcalendar_${version}_z15.bin
   cp $basedir/.pio/build/z21/firmware.bin $basedir/dist/jcalendar_${version}_z21.bin
+  cp $basedir/.pio/build/1680/firmware.bin $basedir/dist/jcalendar_${version}_1680.bin
 fi
 
 echo
