@@ -101,7 +101,7 @@ void setup() {
 
     led_init();
     led_on();
-    delay(1000);
+    delay(100);
     int voltage = readBatteryVoltage();
     Serial.printf("Battery: %d mV\r\n", voltage);
     if(voltage < 2500) {

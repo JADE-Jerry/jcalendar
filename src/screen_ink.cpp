@@ -211,8 +211,8 @@ void draw_cal_year(bool partial) {
     u8g2Fonts.setForegroundColor(GxEPD_BLACK);
     u8g2Fonts.print("日");
 
-    calLayout.lunarYearX = u8g2Fonts.getCursorX() + 15;
-    calLayout.lunarDayX = u8g2Fonts.getCursorX() + 15;
+    calLayout.lunarYearX = u8g2Fonts.getCursorX() + 10;
+    calLayout.lunarDayX = u8g2Fonts.getCursorX() + 10;
 
     // 第几周
     u8g2Fonts.setFont(FONT_TEXT);
@@ -238,7 +238,12 @@ void draw_cal_year(bool partial) {
     u8g2Fonts.setCursor(calLayout.lunarDayX, calLayout.lunarDayY);
     u8g2Fonts.setFont(FONT_SUB);
     u8g2Fonts.setForegroundColor(GxEPD_BLACK);
-    u8g2Fonts.print(todayLunarDay);
+    if (!todayLunarDay.isEmpty()) {
+        u8g2Fonts.print(todayLunarDay);
+    } else {
+        u8g2Fonts.setFont(FONT_TEXT);
+        u8g2Fonts.print(("星期" + week_str[tmInfo.tm_wday]).c_str());
+    }
 
     // 特殊日期
     // draw_special_day();
@@ -955,14 +960,6 @@ void drawStudySchedule() {
         } while (true);
     }
 
-    // 显示当前周几, 农历年月不显示
-    todayLunarYear = "";
-    todayLunarDay = "";
-    uint16_t color = (tmInfo.tm_wday == 0 || tmInfo.tm_wday == 6) ? GxEPD_RED : GxEPD_BLACK;
-    u8g2Fonts.setBackgroundColor(GxEPD_WHITE);
-    u8g2Fonts.setForegroundColor(GxEPD_BLACK);
-    u8g2Fonts.setFont(FONT_TEXT);
-    u8g2Fonts.drawUTF8(calLayout.lunarDayX, calLayout.lunarDayY, ("星期" + week_str[tmInfo.tm_wday]).c_str());
 }
 
 ///////////// Calendar //////////////
