@@ -388,13 +388,14 @@ void draw_cal_days(bool partial) {
             }
         }
         bool isJr = false; // 是否节日
+        int currentDateNum = (tmInfo.tm_mon + 1) * 100 + iDay + 1;
         for (; jrIndex < jrLength; jrIndex++) {
-            if (tmInfo.tm_mon * 100 + iDay + 1 < jrDate[jrIndex]) {
+            if (currentDateNum < jrDate[jrIndex]) {
                 break;
             }
-            if (tmInfo.tm_mon * 100 + iDay + 1 < jrDate[jrIndex]) {
+            if (currentDateNum == jrDate[jrIndex]) {
                 lunarStr = jrText[jrIndex];
-                isJr == true;
+                isJr = true;
                 break;
             }
         }
