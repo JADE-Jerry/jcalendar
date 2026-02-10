@@ -75,9 +75,10 @@ Bilibili连接：https://www.bilibili.com/video/BV1wHDhYoE3G/<br>
     * 周首日:
         * 0: 周日(默认); 1: 周一;
     * 和风天气:
-        * 输入和风天气的API Key和城市id(城市对应的id请在和风天气的官网查找。)系统会每2小时刷新当前天气,如果Key置空,天气将不会被刷新。<br>
+        * 和风天气Host：输入在和风天气Host。（例如：******.re.qweatherapi.com, 具体值在自己的和风天气控制台可以查到<br>
+        * 输入和风天气的API Key：输入和风天气Key。（如果Key置空,天气将不会被刷新。）<br>
         * 天气类型：0:每日天气（默认，每天凌晨刷新一次）; 1: 实时天气(每两个小时刷新一次天气)<br>
-        * 位置：城市id或者经纬度 例1: 101010100 例2: 116.41,39.92<br>
+        * 位置ID：城市id或者经纬度 例1: 101010100 例2: 116.41,39.92 <br>
         [城市id列表](./assets/file/China-City-List-latest.csv) <br>
     * 倒数日:<br>输入倒数日名称和日期,名称不能超过4个中文字符,时间以yyyyMMdd的格式填入。配置正确的话,日历每天会显示倒数“距****还有**天”。如果倒数日名称为空,系统将不显示倒数日信息。
     * 日期Tag:<br>
@@ -223,10 +224,13 @@ A: 可能是开发板或驱动板的质量问题，实际发现有些板子休�
 <img src="./assets/img/buymeacoffee.jpg" width="32.9%">
 <img src="./assets/img/likeit.jpg" width="30%"><br>
 
+感谢大家的赞助：
+\*1，*翔，*菜，*华，*名，*波。
+
 ## Reference:
 1. \<WEMOS LOLIN32簡介\> https://swf.com.tw/?p=1331&cpage=1
 2. \<GxEPD2\> https://github.com/ZinggJM/GxEPD2
 3. \<U8g2_for_Adafruit_GFX\> https://github.com/olikraus/U8g2_for_Adafruit_GFX
 4. \<和风天气\> https://dev.qweather.com/docs/api/weather/weather-now/
 <br>
- Copyright © 2023-2025. All Rights Reserved.
+ Copyright © 2023-2026. All Rights Reserved.
